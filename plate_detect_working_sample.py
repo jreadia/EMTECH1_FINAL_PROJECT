@@ -131,7 +131,7 @@ def load_templates(template_directory="templates"):
             
             if template_img is None: continue
             # Use THRESH_BINARY_INV to match the segmented characters (white on black)
-            _, template_thresh = cv2.threshold(template_img, 127, 255, cv2.THRESH_BINARY_INV)
+            _, template_thresh = cv2.threshold(template_img, 127, 255, cv2.THRESH_BINARY)
             
             # CRITICAL: Tightly crop the template to remove padding/whitespace
             coords = cv2.findNonZero(template_thresh)
@@ -142,9 +142,9 @@ def load_templates(template_directory="templates"):
             templates[char_name] = template_thresh
             
             # DEBUG: Save templates to see polarity
-            if char_name in ['0', 'N', 'F', '6']:
-                cv2.imwrite(f"debug_template_{char_name}_thresh.jpg", template_thresh)
-                print(f"DEBUG: Saved template '{char_name}' - thresholded and cropped")
+            # if char_name in ['0', 'N', 'F', '6']:
+            #     cv2.imwrite(f"debug_template_{char_name}_thresh.jpg", template_thresh)
+            #     print(f"DEBUG: Saved template '{char_name}' - thresholded and cropped")
             
     print(f"Loaded {len(templates)} templates.")
     print(f"Available characters: {sorted(templates.keys())}")
@@ -182,7 +182,7 @@ def segment_characters(warped_plate):
 
                 # 2. Get the 4 corners of the rotated box
                 box = cv2.boxPoints(rect)
-                box = np.int0(box)
+                box = np.int64(box)
 
                 # 3. Order the 4 points
                 # (This is a simplified version of our straighten_plate logic)
@@ -297,7 +297,7 @@ def recognize_characters_template_matching(character_images, templates):
                 best_match_char = char_name
         
         # DEBUG: Print matching information
-        print(f"  Char {idx+1}: Tested {templates_tested} templates, Best match = '{best_match_char}' with score = {best_match_score:.3f}")
+        # print(f"  Char {idx+1}: Tested {templates_tested} templates, Best match = '{best_match_char}' with score = {best_match_score:.3f}")
                 
         # ** Tune this confidence threshold **
         # Lowered to 0.2 for better recognition with challenging characters
@@ -369,9 +369,9 @@ def main_pipeline(image_path, template_dir, show_steps=True):
         cv2.imshow("3. Segmented Characters", binary_with_boxes)
         
         # DEBUG: Save first few characters to see them clearly
-        for i in range(min(4, len(characters))):
-            cv2.imwrite(f"debug_char_{i}.jpg", characters[i])
-        print(f"DEBUG: Saved first {min(4, len(characters))} segmented characters")
+        # for i in range(min(4, len(characters))):
+        #     cv2.imwrite(f"debug_char_{i}.jpg", characters[i])
+        # print(f"DEBUG: Saved first {min(4, len(characters))} segmented characters")
         
     plate_text = recognize_characters_template_matching(characters, template_db)
     
@@ -390,7 +390,7 @@ def main_pipeline(image_path, template_dir, show_steps=True):
 # =============================================================================
 if __name__ == "__main__":
     # --- Configuration ---
-    IMAGE_PATH = "plate_with_spaces.jpg" 
+    IMAGE_PATH = "car_img2.jpg" 
     TEMPLATE_DIR = "templates"
     SHOW_VISUAL_STEPS = True
     # ---------------------
