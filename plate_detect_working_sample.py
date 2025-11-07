@@ -130,7 +130,7 @@ def load_templates(template_directory="templates"):
                                       cv2.IMREAD_GRAYSCALE)
             
             if template_img is None: continue
-            # Use THRESH_BINARY_INV to match the segmented characters (white on black)
+            # Use THRESH_BINARY to match the segmented characters (white on black)
             _, template_thresh = cv2.threshold(template_img, 127, 255, cv2.THRESH_BINARY)
             
             # CRITICAL: Tightly crop the template to remove padding/whitespace
