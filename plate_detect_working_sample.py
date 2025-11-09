@@ -5,34 +5,30 @@ import os
 # =============================================================================
 # STEP 1: IMAGE PYRAMID
 # =============================================================================
-def pyramid(image, scale=1.5, minSize=(30, 30)):
-    """Yields images at different scales (an image pyramid) using cv2.resize."""
-    # yield the original image
-    yield image
-    
+def pyramid(image, scale=1.5, min_size=(20, 20)):
+    """
+    Yields images at different scales (an image pyramid).
+    Each step reduces the image size by the given scale factor.
+    Stops when the image is smaller than min_size.
+    """
+    yield image  # Yield the original image
+
     while True:
-        # compute the new width
-        w = int(image.shape[1] / scale)
-        
-        # compute the new height, maintaining aspect ratio
-        r = w / float(image.shape[1])
-        h = int(image.shape[0] * r)
-        
-        # new dimensions
-        dim = (w, h)
-        
-        # resize the image using cv2 (INTER_AREA is good for shrinking)
-        image = cv2.resize(image, dim, interpolation=cv2.INTER_AREA)
-        
-        # if the resized image is too small, stop
-        if image.shape[0] < minSize[1] or image.shape[1] < minSize[0]:
+        # Calculate new dimensions
+        new_width = int(image.shape[1] / scale)
+        new_height = int(image.shape[0] / scale)
+
+        # Stop if the image is too small
+        if new_width < min_size[0] or new_height < min_size[1]:
             break
-            
-        # yield the next image in the pyramid
+
+        # Resize and yield the scaled image
+        image = cv2.resize(image, (new_width, new_height), interpolation=cv2.INTER_AREA)
         yield image
 
+
 # =============================================================================
-# STEP 2: PREPROCESSING
+# STEP 2: PREPROCESSING AND RESIZING
 # =============================================================================
 def preprocess_image(image):
     """Converts to grayscale and applies a bilateral filter."""
@@ -59,7 +55,7 @@ def find_plate_contour(processed_image):
                 (x, y, w, h) = cv2.boundingRect(approx)
                 aspect_ratio = float(w) / h
                 
-                # Tune this aspect ratio range
+                # tune as needed
                 if 2.0 < aspect_ratio < 4.5 and w > 30 and h > 15:
                     plate_contour = approx
                     break
@@ -390,7 +386,7 @@ def main_pipeline(image_path, template_dir, show_steps=True):
 # =============================================================================
 if __name__ == "__main__":
     # --- Configuration ---
-    IMAGE_PATH = "car_img2.jpg" 
+    IMAGE_PATH = "plate_with_spaces.jpg" 
     TEMPLATE_DIR = "templates"
     SHOW_VISUAL_STEPS = True
     # ---------------------
