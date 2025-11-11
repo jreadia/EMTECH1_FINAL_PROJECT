@@ -51,6 +51,10 @@ def find_plate_contour(processed_image):
 
         plate_contour = None
         for c in contours:
+            """
+            This helps identify shapes with 4 sides
+            since license plates are rectangular
+            """
             perimeter = cv2.arcLength(c, True)
             approx = cv2.approxPolyDP(c, 0.018 * perimeter, True)
 
@@ -58,7 +62,7 @@ def find_plate_contour(processed_image):
                 (x, y, w, h) = cv2.boundingRect(approx)
                 aspect_ratio = float(w) / h
 
-                # tune as needed
+                # Tune as needed but these values work for Philippine plates
                 if 1.5 < aspect_ratio < 4.5 and w > 30 and h > 15:
                     plate_contour = approx
                     break
@@ -72,6 +76,7 @@ def find_plate_contour(processed_image):
 def crop_plate(image, plate_contour, plate_type="car"):
     """Crops and warps the 4-point contour to a flat, top-down image. Supports car and motorcycle plate sizes."""
     try:
+        # This is needed to ensure the points are in the correct order before warping
         pts = plate_contour.reshape(4, 2)
         rect = np.zeros((4, 2), dtype="float32")
 
@@ -134,6 +139,10 @@ def load_templates(template_directory="templates"):
             _, template_thresh = cv2.threshold(template_img, 127, 255, cv2.THRESH_BINARY)
             
             # CRITICAL: Tightly crop the template to remove padding/whitespace
+            """
+            If not cropped, template matching may not work well due to extra borders
+            since the segmented characters will be tightly cropped
+            """
             coords = cv2.findNonZero(template_thresh)
             if coords is not None:
                 x, y, w, h = cv2.boundingRect(coords)
@@ -172,7 +181,7 @@ def segment_characters(warped_plate):
                     box[np.argmax(diff)]
                 ], dtype="float32")
 
-                # Standard character size
+                # Standard character size same as templates
                 target_w, target_h = 40, 80
                 dst = np.array([
                     [0, 0],
@@ -224,13 +233,14 @@ def recognize_characters_template_matching(character_images, templates):
             # Resize template to standard size
             template_resized = cv2.resize(template, (TARGET_W, TARGET_H), interpolation=cv2.INTER_AREA)
 
+            # Perform template matching and get the best match score
             result = cv2.matchTemplate(char_resized, template_resized, cv2.TM_CCOEFF_NORMED)
             _, max_val, _, _ = cv2.minMaxLoc(result)
             if max_val > best_match_score:
                 best_match_score = max_val
                 best_match_char = char_name
 
-        # Confidence threshold for accepting a match
+        # Confidence threshold for accepting a match (tune as needed)
         if best_match_score > 0.4: 
             plate_text += best_match_char
         else:
@@ -238,9 +248,9 @@ def recognize_characters_template_matching(character_images, templates):
 
     return plate_text
 
-# --- Function to summarize the entire pipeline --- #
+# --- Function to summarize the entire process --- #
 def recognize_license_plate(image_path, template_directory="templates"):
-    """Full pipeline to recognize license plate from image."""
+    """Full process to recognize license plate from image."""
     image = load_image(image_path)
     preprocessed = preprocess_image(image)
 
